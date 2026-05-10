@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Sunar Ghar — Gold Mortgage Ledger</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════ RESET & VARS */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#B8860B;--gl:#FEF3DC;--gm:#EF9F27;--gd:#5C3006;
+  --bg:#F7F6F2;--sur:#FFFFFF;--sur2:#F2F0EB;--bdr:rgba(0,0,0,0.09);
+  --tx:#18180F;--mu:#64635A;--hi:#A09F97;
+  --red-bg:#FDF0F0;--red:#8B1A1A;--red-b:#D94040;
+  --grn-bg:#EDF7E6;--grn:#1E5C06;--grn-b:#4D9A22;
+  --blu-bg:#E8F2FD;--blu:#0A3B7A;--blu-b:#2D7DD2;
+  --rad:8px;--radl:14px;--radx:18px;
+  --sh:0 1px 3px rgba(0,0,0,0.07),0 2px 8px rgba(0,0,0,0.05);
+  --shd:0 4px 20px rgba(0,0,0,0.12),0 1px 4px rgba(0,0,0,0.08);
+  --fn:'Segoe UI','Helvetica Neue',Arial,sans-serif
+}
+body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;line-height:1.55}
+
+/* ═══════════════════════════════════════════ FIREBASE SETUP SCREEN */
+#setup-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#1C1C2E 0%,#16213E 60%,#0F3460 100%);padding:1rem}
+.setup-box{background:#fff;border-radius:var(--radx);width:100%;max-width:700px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.5)}
+.setup-head{background:linear-gradient(135deg,#0F3460,#1a5276);color:#fff;padding:1.75rem 2rem}
+.setup-head h1{font-size:20px;font-weight:700;margin-bottom:4px}
+.setup-head p{font-size:13px;opacity:.8}
+.setup-body{padding:1.75rem 2rem;max-height:85vh;overflow-y:auto}
+.step-card{border:1px solid #E8EDF5;border-radius:var(--radl);padding:1.1rem 1.25rem;margin-bottom:1rem;background:#FAFBFE}
+.step-title{display:flex;align-items:center;gap:10px;margin-bottom:.6rem}
+.step-num{width:26px;height:26px;border-radius:50%;background:#0F3460;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-title span{font-weight:700;color:#0F3460;font-size:14px}
+.step-card p{font-size:13px;color:#444;margin-bottom:.4rem;line-height:1.6}
+.step-card strong{color:#0F3460}
+.code{background:#1C1C2E;color:#61DAFB;font-family:'Courier New',monospace;font-size:11.5px;padding:10px 14px;border-radius:var(--rad);margin:.5rem 0;word-break:break-all;line-height:1.7}
+.sf{margin-top:.6rem}
+.sf label{display:block;font-size:10px;font-weight:800;color:#666;margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em}
+.sf input{width:100%;padding:8px 11px;border:1.5px solid #DDE3F5;border-radius:var(--rad);font-size:13px;font-family:'Courier New',monospace;color:#1C1C2E;background:#fff;outline:none;transition:border .15s}
+.sf input:focus{border-color:#0F3460}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:.5rem}
+.setup-btn{width:100%;padding:13px;background:linear-gradient(135deg,#0F3460,#1a5276);color:#fff;border:none;border-radius:var(--rad);font-size:15px;font-weight:700;cursor:pointer;margin-top:1rem;font-family:var(--fn);letter-spacing:.02em}
+.setup-btn:hover{background:linear-gradient(135deg,#1a4a8a,#2471a3)}
+.setup-note{font-size:11px;color:#999;text-align:center;margin-top:.5rem}
+.setup-alt{text-align:center;margin-top:.75rem;font-size:12px;color:#888}
+.setup-alt a{color:#0F3460;cursor:pointer;text-decoration:underline}
+
+/* ═══════════════════════════════════════════ LOGIN */
+#login-screen{min-height:100vh;display:none;align-items:center;justify-content:center;
+  background:linear-gradient(150deg,#FEF3DC 0%,#FDEAC0 40%,#F5E6C8 100%)}
+.login-wrap{display:flex;align-items:stretch;box-shadow:var(--shd);border-radius:var(--radx);overflow:hidden;width:780px;max-width:96vw}
+.login-left{background:var(--gd);color:#FEF3DC;padding:2.5rem 2rem;width:300px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center}
+.login-left .ll-logo{font-size:52px;text-align:center;margin-bottom:1rem}
+.login-left h2{font-size:20px;font-weight:700;text-align:center;margin-bottom:.4rem}
+.login-left p{font-size:12px;opacity:.75;text-align:center;line-height:1.6}
+.login-left .ll-feat{margin-top:1.5rem;display:flex;flex-direction:column;gap:8px}
+.login-left .ll-feat div{display:flex;align-items:center;gap:8px;font-size:12px;opacity:.85}
+.login-right{background:#fff;padding:2.5rem 2rem;flex:1;display:flex;flex-direction:column;justify-content:center}
+.login-right h3{font-size:18px;font-weight:700;color:var(--tx);margin-bottom:.25rem}
+.login-right .lr-sub{font-size:12px;color:var(--mu);margin-bottom:1.75rem}
+.lf{margin-bottom:1rem}
+.lf label{display:block;font-size:10px;font-weight:800;color:var(--mu);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+.lf input{width:100%;padding:11px 13px;border:1.5px solid var(--bdr);border-radius:var(--rad);font-size:15px;background:var(--bg);color:var(--tx);outline:none;font-family:var(--fn);transition:border .15s,box-shadow .15s}
+.lf input:focus{border-color:var(--gm);box-shadow:0 0 0 3px rgba(239,159,39,.15)}
+.login-btn{width:100%;padding:13px;background:var(--gd);color:#FEF3DC;border:none;border-radius:var(--rad);font-size:15px;font-weight:700;cursor:pointer;font-family:var(--fn);transition:background .15s}
+.login-btn:hover{background:#3D1A08}
+.login-err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-b);border-radius:var(--rad);padding:9px 13px;font-size:13px;margin-top:.75rem;display:none;text-align:center}
+.login-hint{font-size:11px;color:var(--hi);text-align:center;margin-top:1rem}
+.login-cloud{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--blu);background:var(--blu-bg);border:1px solid var(--blu-b);border-radius:20px;padding:5px 12px;margin-bottom:1.5rem}
+@media(max-width:600px){.login-left{display:none}.login-right{padding:2rem 1.5rem}}
+
+/* ═══════════════════════════════════════════ APP SHELL */
+#app{display:none}
+.topbar{background:var(--gd);color:#FEF3DC;display:flex;align-items:center;justify-content:space-between;height:54px;padding:0 1.5rem;position:sticky;top:0;z-index:60;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.tb-l{display:flex;align-items:center;gap:12px}
+.tb-logo{font-size:24px}
+.tb-name{font-size:16px;font-weight:700;letter-spacing:.01em}
+.tb-sub{font-size:10px;opacity:.65;display:flex;align-items:center;gap:4px;margin-top:1px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#4ADE80;display:inline-block}
+.sync-dot.off{background:#F87171}
+.tb-r{display:flex;align-items:center;gap:8px}
+.tb-user{font-size:12px;opacity:.75;background:rgba(255,255,255,.12);padding:4px 10px;border-radius:20px}
+.tb-logout{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#FEF3DC;padding:5px 12px;border-radius:var(--rad);font-size:12px;cursor:pointer;font-family:var(--fn)}
+.tb-logout:hover{background:rgba(255,255,255,.25)}
+.navbar{background:#fff;border-bottom:1px solid var(--bdr);display:flex;padding:0 1rem;position:sticky;top:54px;z-index:50;overflow-x:auto;scrollbar-width:none}
+.navbar::-webkit-scrollbar{display:none}
+.nb{padding:0 14px;height:46px;border:none;background:none;color:var(--mu);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap;font-family:var(--fn);transition:all .15s}
+.nb:hover{color:var(--gd)}
+.nb.act{color:var(--gd);border-bottom-color:var(--gm)}
+.main{max-width:1140px;margin:0 auto;padding:1.5rem 1.25rem 5rem}
+.sec{display:none}.sec.act{display:block}
+
+/* ═══════════════════════════════════════════ COMPONENTS */
+.pg-title{font-size:20px;font-weight:700;color:var(--tx);margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px;margin-bottom:1.5rem}
+.sc{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--radl);padding:14px 16px;box-shadow:var(--sh)}
+.sc.gld{border-color:var(--gm);background:var(--gl)}
+.sc-lbl{font-size:10px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.sc-val{font-size:22px;font-weight:800;color:var(--tx)}
+.sc-sub{font-size:11px;color:var(--hi);margin-top:3px}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--radl);padding:1.25rem 1.5rem;margin-bottom:1.25rem;box-shadow:var(--sh)}
+.card-h{font-size:14px;font-weight:700;color:var(--tx);padding-bottom:.75rem;border-bottom:1px solid var(--bdr);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.fsl{font-size:10px;font-weight:800;color:var(--gd);text-transform:uppercase;letter-spacing:.1em;margin:1.1rem 0 .75rem;padding-bottom:5px;border-bottom:2px solid var(--gl)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.ff{grid-column:1/-1}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:10px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.05em}
+.fld label .rq{color:var(--red)}
+.fld input,.fld select,.fld textarea{padding:9px 12px;border:1.5px solid var(--bdr);border-radius:var(--rad);font-size:14px;background:var(--bg);color:var(--tx);width:100%;font-family:var(--fn);outline:none;transition:border .15s,box-shadow .15s}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--gm);box-shadow:0 0 0 3px rgba(239,159,39,.12)}
+.fld textarea{resize:vertical;min-height:72px}
+.fn{font-size:11px;color:var(--hi);margin-top:2px}
+.btn{padding:9px 18px;border-radius:var(--rad);border:1.5px solid var(--bdr);font-size:13px;cursor:pointer;font-weight:700;font-family:var(--fn);transition:all .15s;background:var(--sur);color:var(--tx);white-space:nowrap}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.bp{background:var(--gd);border-color:var(--gd);color:#FEF3DC}.bp:hover:not(:disabled){background:#3D1A08}
+.bg{background:var(--gl);border-color:var(--gm);color:var(--gd)}.bg:hover{background:#FAD07A}
+.bd{background:var(--red-bg);border-color:var(--red-b);color:var(--red)}
+.bs{background:var(--grn-bg);border-color:var(--grn-b);color:var(--grn)}
+.bi{background:var(--blu-bg);border-color:var(--blu-b);color:var(--blu)}
+.bpu{background:#F0EFFE;border-color:#7B6EF5;color:#3D31B5}
+.sm{padding:5px 10px;font-size:12px}
+.br{display:flex;gap:8px;margin-top:1.25rem;flex-wrap:wrap}
+.bdg{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid}
+.bdg-active{background:var(--blu-bg);color:var(--blu);border-color:var(--blu-b)}
+.bdg-closed{background:var(--grn-bg);color:var(--grn);border-color:var(--grn-b)}
+.bdg-overdue{background:var(--red-bg);color:var(--red);border-color:var(--red-b)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+th{text-align:left;padding:10px 12px;color:var(--mu);font-weight:800;border-bottom:2px solid var(--bdr);font-size:10px;text-transform:uppercase;letter-spacing:.06em;background:var(--sur2)}
+td{padding:11px 12px;border-bottom:1px solid var(--bdr);color:var(--tx);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--gl);cursor:pointer}
+.chip{background:var(--gl);color:var(--gd);font-size:11px;padding:3px 9px;border-radius:5px;font-weight:700;font-family:'Courier New',monospace;border:1px solid var(--gm)}
+.sfbar{display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.sfbar input{flex:1;min-width:200px;padding:9px 13px;border:1.5px solid var(--bdr);border-radius:var(--rad);font-size:14px;background:var(--sur);color:var(--tx);font-family:var(--fn);outline:none}
+.sfbar input:focus{border-color:var(--gm)}
+.fc{display:flex;gap:6px;flex-wrap:wrap}
+.fcp{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid var(--bdr);background:var(--sur);color:var(--mu);cursor:pointer;transition:all .15s}
+.fcp.act{background:var(--gl);border-color:var(--gm);color:var(--gd)}
+.ibox{background:var(--gl);border:1px solid var(--gm);border-radius:var(--radl);padding:14px 16px}
+.ibox-t{font-size:10px;font-weight:800;color:var(--gd);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.ir{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px;border-bottom:1px solid rgba(184,122,10,.15)}
+.ir:last-child{border-bottom:none;font-size:15px;font-weight:800;color:var(--gd);margin-top:4px;padding-top:8px}
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.mo.open{display:flex}
+.mdl{background:var(--sur);border-radius:var(--radx);padding:1.75rem;width:100%;max-width:660px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.35)}
+.mdl-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--bdr)}
+.mdl-t{font-size:16px;font-weight:700;display:flex;align-items:center;gap:10px}
+.xbtn{width:32px;height:32px;border:1.5px solid var(--bdr);border-radius:50%;background:var(--sur2);color:var(--mu);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.xbtn:hover{background:var(--red-bg);color:var(--red)}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.ip{background:var(--sur2);border-radius:var(--rad);padding:10px 13px}
+.ip .lb{font-size:10px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.ip .vl{font-size:14px;color:var(--tx);font-weight:600}
+.alrt{padding:12px 16px;border-radius:var(--rad);font-size:13px;margin-bottom:1rem;border:1px solid}
+.alrt-w{background:var(--gl);color:var(--gd);border-color:var(--gm)}
+.alrt-d{background:var(--red-bg);color:var(--red);border-color:var(--red-b)}
+.alrt-s{background:var(--grn-bg);color:var(--grn);border-color:var(--grn-b)}
+.alrt-i{background:var(--blu-bg);color:var(--blu);border-color:var(--blu-b)}
+.dvd{height:1px;background:var(--bdr);margin:1rem 0}
+.pu-area{border:2px dashed var(--gm);border-radius:var(--radl);padding:1.25rem;text-align:center;background:var(--gl);cursor:pointer;color:var(--gd);font-size:13px;transition:all .15s}
+.pu-area:hover{background:#FBDD8F}
+.pg{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pt{width:80px;height:80px;object-fit:cover;border-radius:var(--rad);border:2px solid var(--gm)}
+.es{text-align:center;padding:3rem 1rem;color:var(--mu)}
+.es .ei{font-size:36px;margin-bottom:.75rem}
+.hi-it{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bdr);font-size:13px}
+.hi-it:last-child{border-bottom:none}
+.cr{background:var(--sur2);border-radius:var(--radl);padding:14px 16px;margin-top:1rem;border:1px solid var(--bdr)}
+.crw{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--bdr)}
+.crw:last-child{border-bottom:none;font-size:16px;font-weight:800;color:var(--gd)}
+.sh{font-size:11px;font-weight:800;color:var(--gd);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem}
+.sr{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bdr);font-size:13px;gap:12px}
+.sr:last-child{border-bottom:none}
+.sr label{color:var(--mu);font-weight:600}
+.sr input,.sr select{padding:7px 9px;border:1.5px solid var(--bdr);border-radius:var(--rad);font-family:var(--fn);font-size:13px;background:var(--bg);color:var(--tx);outline:none;min-width:80px}
+/* Loading */
+.lov{position:fixed;inset:0;background:rgba(255,255,255,.88);z-index:999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;backdrop-filter:blur(2px)}
+.lov.show{display:flex}
+.sp{width:38px;height:38px;border:3px solid var(--gl);border-top:3px solid var(--gm);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lt{font-size:13px;color:var(--mu);font-weight:500}
+/* Responsive */
+@media(max-width:640px){
+  .fg,.fg3,.igrid{grid-template-columns:1fr}
+  .ff{grid-column:1}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .tb-sub{display:none}
+  .main{padding:1rem .75rem 5rem}
+  table{min-width:560px}
+  .mdl{padding:1.25rem}
+}
+@media print{
+  .topbar,.navbar,.br,.no-print,.xbtn{display:none!important}
+  .mo{position:static!important;display:block!important;background:none!important}
+  .mdl{box-shadow:none!important;max-height:none!important;border-radius:0}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ FIREBASE SETUP ══════════════════════════ -->
+<div id="setup-screen">
+  <div class="setup-box">
+    <div class="setup-head">
+      <h1>🔥 Connect to Firebase Cloud — One Time Setup</h1>
+      <p>Your data will be stored securely on Google Firebase. Access from phone, laptop, anywhere. Free forever.</p>
+    </div>
+    <div class="setup-body">
+
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">1</span><span>Create free Firebase project</span></div>
+        <p>Go to <strong>console.firebase.google.com</strong> → Sign in with Google account → Click <strong>"Add project"</strong></p>
+        <p>Name: <em>gold-ledger</em> → Disable Analytics → Click <strong>Create project</strong></p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">2</span><span>Create Firestore database</span></div>
+        <p>Left menu → <strong>Build → Firestore Database</strong> → <strong>Create database</strong></p>
+        <p>Select <strong>"Start in test mode"</strong> → Region: <strong>asia-south1</strong> (India) → Enable</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">3</span><span>Get your config</span></div>
+        <p>Click ⚙️ gear → <strong>Project settings</strong> → scroll to <strong>"Your apps"</strong> → click <strong>Web (&lt;/&gt;)</strong></p>
+        <p>Register with any name → copy the <strong>firebaseConfig</strong> object values below</p>
+        <div class="code">apiKey: "AIzaSyXXXXXXXXXXXXXXXX"<br>authDomain: "gold-ledger-xxxxx.firebaseapp.com"<br>projectId: "gold-ledger-xxxxx"<br>storageBucket: "gold-ledger-xxxxx.appspot.com"<br>messagingSenderId: "123456789012"<br>appId: "1:123456789:web:abcdef123456"</div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-title"><span class="step-num">4</span><span>Paste your values here</span></div>
+        <div class="setup-grid">
+          <div class="sf"><label>apiKey</label><input id="c-apiKey" placeholder="AIzaSy..."/></div>
+          <div class="sf"><label>authDomain</label><input id="c-authDomain" placeholder="project.firebaseapp.com"/></div>
+          <div class="sf"><label>projectId</label><input id="c-projectId" placeholder="your-project-id"/></div>
+          <div class="sf"><label>storageBucket</label><input id="c-storageBucket" placeholder="project.appspot.com"/></div>
+          <div class="sf"><label>messagingSenderId</label><input id="c-messagingSenderId" placeholder="123456789012"/></div>
+          <div class="sf"><label>appId</label><input id="c-appId" placeholder="1:123:web:abc123"/></div>
+        </div>
+        <button class="setup-btn" onclick="saveFirebaseConfig()">✅ Connect to Firebase & Continue →</button>
+        <p class="setup-note">🔒 Config saved in your browser only. Never sent anywhere else.</p>
+      </div>
+
+      <div class="setup-alt"><a onclick="skipSetupLocal()">Skip cloud — use local storage only (this device only)</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ LOGIN ══════════════════════════ -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-left">
+      <div class="ll-logo">⚖️</div>
+      <h2>Sunar Ghar</h2>
+      <p>Gold Mortgage Management System</p>
+      <div class="ll-feat">
+        <div>☁️ Cloud sync — any device</div>
+        <div>🔒 SHA-256 password hashing</div>
+        <div>📄 Professional PDF bills</div>
+        <div>📊 Live interest calculator</div>
+        <div>🔔 Overdue alerts</div>
+      </div>
+    </div>
+    <div class="login-right">
+      <div class="login-cloud" id="login-cloud-badge">☁️ Cloud connected — data syncs everywhere</div>
+      <h3>Welcome back</h3>
+      <p class="lr-sub">Sign in to access your ledger</p>
+      <div class="lf"><label>Username</label><input id="lu" placeholder="Enter username" autocomplete="username"/></div>
+      <div class="lf"><label>Passcode</label><input type="password" id="lp" placeholder="Enter passcode" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <button class="login-btn" onclick="doLogin()">Sign in →</button>
+      <div class="login-err" id="lerr"></div>
+      <div class="login-hint">Default: <strong>admin</strong> / <strong>1234</strong> — change immediately in Settings<br><span style="color:var(--gm)">🔐 Password never stored — only its hash</span></div>
+      <div style="margin-top:1rem;text-align:center"><button onclick="showSetup()" style="background:none;border:none;color:var(--hi);font-size:11px;cursor:pointer;font-family:var(--fn)">⚙ Reconfigure Firebase</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ APP ══════════════════════════ -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-l">
+      <div class="tb-logo">⚖️</div>
+      <div>
+        <div class="tb-name" id="tb-name">Sunar Ghar</div>
+        <div class="tb-sub"><span class="sync-dot" id="sdot"></span><span id="sstat">Connecting...</span></div>
+      </div>
+    </div>
+    <div class="tb-r">
+      <div class="tb-user" id="tbu"></div>
+      <button class="tb-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+  <div class="navbar">
+    <button class="nb act" data-t="dashboard">📊 Dashboard</button>
+    <button class="nb" data-t="new">➕ New Mortgage</button>
+    <button class="nb" data-t="ledger">📋 Ledger</button>
+    <button class="nb" data-t="calc">🧮 Calculator</button>
+    <button class="nb" data-t="reports">📈 Reports</button>
+    <button class="nb" data-t="settings">⚙️ Settings</button>
+  </div>
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard" class="sec act">
+      <div id="od-alert"></div>
+      <div class="stats-grid" id="dash-stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+        <div class="card"><div class="card-h">🕐 Recent entries</div><div id="dash-recent"></div></div>
+        <div class="card"><div class="card-h">📅 Due this week</div><div id="dash-due"></div></div>
+      </div>
+    </div>
+
+    <!-- NEW ENTRY -->
+    <div id="tab-new" class="sec">
+      <div class="pg-title">➕ New Mortgage Entry</div>
+      <div class="card">
+        <div class="fsl">👤 Customer Information</div>
+        <div class="fg">
+          <div class="fld"><label>Full name <span class="rq">*</span></label><input id="fn" placeholder="Customer full name"/></div>
+          <div class="fld"><label>Mobile <span class="rq">*</span></label><input id="fm" type="tel" placeholder="10-digit mobile"/></div>
+          <div class="fld"><label>Aadhaar number</label><input id="fa" placeholder="XXXX XXXX XXXX"/></div>
+          <div class="fld"><label>Father / Husband name</label><input id="fg" placeholder="Guardian name"/></div>
+          <div class="fld ff"><label>Full address</label><input id="fad" placeholder="Village, Tehsil, District, State"/></div>
+        </div>
+        <div class="fsl">💎 Jewellery Details</div>
+        <div class="fg">
+          <div class="fld"><label>Article name <span class="rq">*</span></label><input id="fart" placeholder="e.g. Gold Necklace, Bangles, Ring"/></div>
+          <div class="fld"><label>Quantity (pieces) <span class="rq">*</span></label><input id="fq" type="number" value="1" min="1"/></div>
+          <div class="fld"><label>Gross weight (g) <span class="rq">*</span></label><input id="fgw" type="number" placeholder="0.000" step="0.001" oninput="autoCalc()"/></div>
+          <div class="fld"><label>Net gold weight (g)</label><input id="fnw" type="number" placeholder="0.000" step="0.001"/></div>
+          <div class="fld"><label>Stone / other deduction (g)</label><input id="fsw" type="number" placeholder="0.000" step="0.001"/></div>
+          <div class="fld"><label>Purity / Karat</label>
+            <select id="fpu" onchange="autoCalc()">
+              <option value="1">24K — Pure Gold (99.9%)</option>
+              <option value="0.9167" selected>22K — Standard Jewellery (91.67%)</option>
+              <option value="0.75">18K — Mixed (75%)</option>
+              <option value="0.5833">14K — Low Purity (58.33%)</option>
+              <option value="0">Other / Mixed</option>
+            </select>
+          </div>
+          <div class="fld"><label>Gold rate today (₹/g)</label><input id="fgr" type="number" placeholder="e.g. 6800" oninput="autoCalc()"/></div>
+          <div class="fld"><label>Est. jewellery value (₹)</label><input id="fjv" type="number" placeholder="Auto-calculated"/></div>
+          <div class="fld ff"><label>Identification marks / description</label><textarea id="frm" placeholder="Special marks, colour, stones, shape, damage — for identification purposes..."></textarea></div>
+        </div>
+        <div class="fsl">💰 Loan & Interest Terms</div>
+        <div class="fg">
+          <div class="fld"><label>Entry date <span class="rq">*</span></label><input id="fed" type="date"/></div>
+          <div class="fld"><label>Expected return date</label><input id="frd" type="date"/></div>
+          <div class="fld"><label>Loan amount (₹) <span class="rq">*</span></label><input id="fam" type="number" placeholder="Amount given to customer" oninput="previewInt()"/></div>
+          <div class="fld"><label>Interest rate (% per month)</label><input id="fir" type="number" value="3" step="0.1" oninput="previewInt()"/></div>
+          <div class="fld"><label>Minimum billing period (days)</label><input id="fmd" type="number" value="15" oninput="previewInt()"/><span class="fn">Early return still charged for min days</span></div>
+          <div class="fld"><label>Billing slab</label>
+            <select id="fsl2" onchange="previewInt()">
+              <option value="15">15-day slabs</option>
+              <option value="30">30-day slabs</option>
+            </select>
+          </div>
+        </div>
+        <div id="int-prev" style="margin-top:1rem;display:none"></div>
+        <div class="fsl">📷 Jewellery Photos</div>
+        <div class="pu-area" onclick="document.getElementById('pi').click()">
+          📷 Click to upload jewellery photos &amp; Aadhaar card image<br>
+          <span style="font-size:11px;opacity:.7">Multiple photos supported · Auto-compressed for cloud storage</span>
+        </div>
+        <input type="file" id="pi" accept="image/*" multiple style="display:none" onchange="handlePhotos(event)"/>
+        <div class="pg" id="pprev"></div>
+        <div class="br">
+          <button class="btn bp" id="submit-btn" onclick="submitEntry()">✅ Save to Cloud</button>
+          <button class="btn bg" onclick="clearForm()">🗑 Clear form</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEDGER -->
+    <div id="tab-ledger" class="sec">
+      <div class="pg-title">📋 Mortgage Ledger</div>
+      <div class="sfbar">
+        <input id="srch" placeholder="🔍 Search by name, ID, mobile, article..." oninput="renderLedger()"/>
+        <div class="fc">
+          <button class="fcp act" onclick="setFilt('all',this)">All</button>
+          <button class="fcp" onclick="setFilt('active',this)">Active</button>
+          <button class="fcp" onclick="setFilt('closed',this)">Closed</button>
+          <button class="fcp" onclick="setFilt('overdue',this)">Overdue</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0"><div class="tw"><div id="ledger-tbl"></div></div></div>
+    </div>
+
+    <!-- CALCULATOR -->
+    <div id="tab-calc" class="sec">
+      <div class="pg-title">🧮 Calculator</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+        <div class="card">
+          <div class="card-h">Interest Calculator</div>
+          <div class="fld" style="margin-bottom:10px"><label>Principal amount (₹)</label><input id="cp" type="number" placeholder="Loan amount" oninput="doCalc()"/></div>
+          <div class="fld" style="margin-bottom:10px"><label>Interest rate (%/month)</label><input id="cr" type="number" value="3" step="0.1" oninput="doCalc()"/></div>
+          <div class="fld" style="margin-bottom:10px"><label>Start date</label><input id="cs" type="date" oninput="doCalc()"/></div>
+          <div class="fld" style="margin-bottom:10px"><label>End date</label><input id="ce" type="date" oninput="doCalc()"/></div>
+          <div class="fld" style="margin-bottom:10px"><label>Min billing days</label><input id="cm" type="number" value="15" oninput="doCalc()"/></div>
+          <div class="fld" style="margin-bottom:10px"><label>Slab</label><select id="csl" onchange="doCalc()"><option value="15">15-day</option><option value="30">30-day</option></select></div>
+          <div id="c-out"></div>
+        </div>
+        <div class="card">
+          <div class="card-h">Gold Value Estimator</div>
+          <div class="fld" style="margin-bottom:10px"><label>Net weight (g)</label><input id="gw" type="number" placeholder="Gold weight" oninput="doGold()"/></div>
+          <div class="fld" style="margin-bottom:10px"><label>Gold rate (₹/g)</label><input id="gr" type="number" placeholder="Today's rate" oninput="doGold()"/></div>
+          <div class="fld" style="margin-bottom:10px"><label>Purity</label>
+            <select id="gp" onchange="doGold()">
+              <option value="1">24K (100%)</option>
+              <option value="0.9167" selected>22K (91.67%)</option>
+              <option value="0.75">18K (75%)</option>
+              <option value="0.5833">14K (58.33%)</option>
+            </select>
+          </div>
+          <div class="fld" style="margin-bottom:10px"><label>Making charges (%)</label><input id="gmc" type="number" value="8" oninput="doGold()"/></div>
+          <div class="fld" style="margin-bottom:10px"><label>LTV ratio (%)</label><input id="gltv" type="number" value="70" oninput="doGold()"/></div>
+          <div id="g-out"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div id="tab-reports" class="sec">
+      <div class="pg-title">📈 Reports & Export</div>
+      <div class="stats-grid" id="rpt-stats"></div>
+      <div class="card">
+        <div class="card-h">Actions</div>
+        <div class="br" style="margin-top:0">
+          <button class="btn bp" onclick="exportCSV()">⬇ Export CSV</button>
+          <button class="btn bg" onclick="window.print()">🖨 Print Ledger</button>
+          <button class="btn bi" onclick="exportJSON()">💾 Backup JSON</button>
+          <button class="btn bs" onclick="document.getElementById('impf').click()">📂 Restore Backup</button>
+          <input type="file" id="impf" accept=".json" style="display:none" onchange="handleImport(event)"/>
+        </div>
+      </div>
+      <div class="card"><div class="card-h">All Entries</div><div class="tw" id="rpt-tbl"></div></div>
+      <div class="card"><div class="card-h">💸 Payment History</div><div id="pay-log"></div></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="tab-settings" class="sec">
+      <div class="pg-title">⚙️ Settings</div>
+      <div class="card">
+        <div class="sh">🔐 Login Credentials</div>
+        <div class="alrt alrt-i" style="font-size:12px;padding:10px 14px;margin-bottom:1rem">
+          🛡️ Password stored as SHA-256 hash in cloud. No one can read your real password — not even from the database.
+        </div>
+        <div class="fg">
+          <div class="fld"><label>Username</label><input id="su" placeholder="New username"/></div>
+          <div class="fld"><label>Current passcode <span class="rq">*</span></label><input id="scp" type="password" placeholder="Enter current passcode to verify"/></div>
+          <div class="fld"><label>New passcode <span style="color:var(--hi);font-weight:400">(leave blank to keep current)</span></label><input id="snp" type="password" placeholder="Minimum 4 characters"/></div>
+          <div class="fld"><label>Confirm new passcode</label><input id="snp2" type="password" placeholder="Repeat new passcode"/></div>
+        </div>
+        <button class="btn bp" style="margin-top:10px" onclick="saveCreds()">Save Credentials to Cloud</button>
+        <div class="dvd"></div>
+        <div class="sh">🏪 Business Information (printed on bills)</div>
+        <div class="fg">
+          <div class="fld"><label>Shop / Business name</label><input id="ss" placeholder="e.g. Sunar Ghar Jewellers"/></div>
+          <div class="fld"><label>Owner name</label><input id="so" placeholder="Your full name"/></div>
+          <div class="fld"><label>Mobile / WhatsApp</label><input id="sph" placeholder="Contact number"/></div>
+          <div class="fld"><label>GST / Licence No.</label><input id="sg" placeholder="Optional"/></div>
+          <div class="fld ff"><label>Full shop address</label><input id="sa" placeholder="Shop full address for bills"/></div>
+        </div>
+        <button class="btn bg" style="margin-top:10px" onclick="saveBiz()">Save Business Info to Cloud</button>
+        <div class="dvd"></div>
+        <div class="sh">📊 Default Entry Settings</div>
+        <div class="sr"><label>Default interest rate (%/month)</label><input id="sdr" type="number" value="3" step="0.1"/></div>
+        <div class="sr"><label>Default minimum billing days</label><input id="sdm" type="number" value="15"/></div>
+        <div class="sr"><label>Default slab</label><select id="sds"><option value="15">15 days</option><option value="30">30 days</option></select></div>
+        <button class="btn bg" style="margin-top:10px" onclick="saveDefs()">Save Defaults</button>
+        <div class="dvd"></div>
+        <div class="sh">⚠ Danger Zone</div>
+        <button class="btn bd" onclick="clearAll()">🗑 Delete ALL Data Permanently</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="mo" id="dmo">
+  <div class="mdl">
+    <div class="mdl-h">
+      <div class="mdl-t" id="mdl-id"></div>
+      <button class="xbtn" onclick="closeMo()">✕</button>
+    </div>
+    <div id="mdl-body"></div>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div class="lov" id="lov">
+  <div class="sp"></div>
+  <div class="lt" id="lt">Saving to cloud...</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// FIREBASE DYNAMIC LOADER
+// ═══════════════════════════════════════════════════════════
+let DB=null, USE_LOCAL=false;
+
+async function initFirebase(cfg){
+  const {initializeApp}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+  const {getFirestore,doc,getDoc,setDoc,collection,getDocs,deleteDoc,onSnapshot,enableIndexedDbPersistence}
+    =await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const app=initializeApp(cfg);
+  DB=getFirestore(app);
+  try{await enableIndexedDbPersistence(DB)}catch(e){}
+  window._FB={doc,getDoc,setDoc,collection,getDocs,deleteDoc,onSnapshot,DB};
+  console.log('✅ Firebase ready');
+}
+
+// ═══════════════════════════════════════════════════════════
+// SETUP & CONFIG
+// ═══════════════════════════════════════════════════════════
+function saveFirebaseConfig(){
+  const keys=['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'];
+  const cfg={};
+  for(const k of keys){const v=document.getElementById('c-'+k).value.trim();if(v)cfg[k]=v;}
+  if(!cfg.apiKey||!cfg.projectId){alert('Please fill at least apiKey and projectId');return}
+  localStorage.setItem('gm_fb_cfg',JSON.stringify(cfg));
+  localStorage.removeItem('gm_local_mode');
+  alert('✅ Config saved! Connecting...');
+  location.reload();
+}
+function skipSetupLocal(){
+  if(!confirm('Without Firebase, data is only saved on THIS device. Continue?'))return;
+  localStorage.setItem('gm_local_mode','1');
+  USE_LOCAL=true;
+  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-cloud-badge').innerHTML='💾 Local mode — data on this device only';
+  document.getElementById('login-cloud-badge').style.background='var(--gl)';
+  document.getElementById('login-cloud-badge').style.color='var(--gd)';
+}
+function showSetup(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('setup-screen').style.display='flex';
+}
+
+// ═══════════════════════════════════════════════════════════
+// GLOBALS
+// ═══════════════════════════════════════════════════════════
+let entries=[],settings={},photoData=[],curFilt='all';
+const SD='app_settings',EC='entries';
+const DEF_HASH='03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4';
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+async function sha256(m){
+  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function genId(){
+  const d=new Date();
+  return 'GM'+String(d.getFullYear()).slice(2)+String(d.getMonth()+1).padStart(2,'0')+Date.now().toString().slice(-5);
+}
+function today(){return new Date().toISOString().split('T')[0]}
+function daysB(a,b){if(!a||!b)return 0;return Math.max(0,Math.ceil((new Date(b)-new Date(a))/86400000))}
+function bdays(actual,min,slab){
+  slab=parseInt(slab);min=parseInt(min);
+  if(actual<min)actual=min;
+  return Math.ceil(actual/slab)*slab;
+}
+function calcInt(p,rate,days,min,slab){
+  const bd=bdays(days,min,slab);
+  return{interest:p*(rate/100/30)*bd,bd};
+}
+function fINR(n){return'₹'+Math.round(n).toLocaleString('en-IN')}
+function fDate(d){if(!d)return'—';return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+function isOD(e){return e.status!=='closed'&&e.returnDate&&today()>e.returnDate}
+function gSt(e){if(e.status==='closed')return'closed';if(isOD(e))return'overdue';return'active'}
+function showLoad(t){document.getElementById('lt').textContent=t||'Saving...';document.getElementById('lov').classList.add('show')}
+function hideLoad(){document.getElementById('lov').classList.remove('show')}
+function syncOK(ok){
+  document.getElementById('sdot').className='sync-dot'+(ok?'':' off');
+  document.getElementById('sstat').textContent=ok?'Cloud synced':'Offline';
+}
+
+// ═══════════════════════════════════════════════════════════
+// DATABASE LAYER (Firebase or LocalStorage)
+// ═══════════════════════════════════════════════════════════
+async function dbGetSettings(){
+  if(USE_LOCAL){
+    const r=localStorage.getItem('gm_settings');
+    return r?JSON.parse(r):null;
+  }
+  const {doc,getDoc,DB}=window._FB;
+  const d=await getDoc(doc(DB,'settings',SD));
+  return d.exists()?d.data():null;
+}
+async function dbSaveSettings(s){
+  if(USE_LOCAL){localStorage.setItem('gm_settings',JSON.stringify(s));return}
+  const {doc,setDoc,DB}=window._FB;
+  await setDoc(doc(DB,'settings',SD),s);
+}
+async function dbSaveEntry(e){
+  if(USE_LOCAL){
+    const idx=entries.findIndex(x=>x.id===e.id);
+    if(idx>=0)entries[idx]=e;else entries.push(e);
+    localStorage.setItem('gm_entries',JSON.stringify(entries));
+    return;
+  }
+  const {doc,setDoc,DB}=window._FB;
+  await setDoc(doc(DB,EC,e.id),e);
+}
+async function dbDelEntry(id){
+  if(USE_LOCAL){
+    entries=entries.filter(x=>x.id!==id);
+    localStorage.setItem('gm_entries',JSON.stringify(entries));
+    return;
+  }
+  const {doc,deleteDoc,DB}=window._FB;
+  await deleteDoc(doc(DB,EC,id));
+}
+function startLiveSync(){
+  if(USE_LOCAL){
+    entries=JSON.parse(localStorage.getItem('gm_entries')||'[]');
+    syncOK(true); renderActive(); return;
+  }
+  const {collection,onSnapshot,DB}=window._FB;
+  if(window._unsub)window._unsub();
+  window._unsub=onSnapshot(
+    collection(DB,EC),
+    snap=>{
+      entries=snap.docs.map(d=>d.data());
+      syncOK(true);
+      renderActive();
+    },
+    err=>{console.error(err);syncOK(false)}
+  );
+}
+function renderActive(){
+  const t=document.querySelector('.nb.act')?.dataset?.t;
+  if(t==='dashboard')renderDash();
+  else if(t==='ledger')renderLedger();
+  else if(t==='reports')renderReports();
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════
+async function doLogin(){
+  const u=document.getElementById('lu').value.trim();
+  const p=document.getElementById('lp').value;
+  if(!u||!p){lerr('Enter username and passcode');return}
+  showLoad('Connecting to cloud...');
+  try{
+    let s=await dbGetSettings();
+    if(!s){
+      s={username:'admin',passcodeHash:DEF_HASH,shop:'Sunar Ghar',owner:'',phone:'',gst:'',addr:'',defRate:3,defMin:15,defSlab:'15'};
+      await dbSaveSettings(s);
+    }
+    settings=s;
+    const h=await sha256(p);
+    if(u===settings.username&&h===(settings.passcodeHash||DEF_HASH)){
+      hideLoad();
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('app').style.display='block';
+      document.getElementById('tbu').textContent='👤 '+u;
+      document.getElementById('tb-name').textContent=settings.shop||'Sunar Ghar';
+      loadSettingsUI();
+      startLiveSync();
+      showTab('dashboard');
+    }else{
+      hideLoad(); lerr('Incorrect username or passcode');
+    }
+  }catch(err){hideLoad();lerr('Error: '+err.message);syncOK(false)}
+}
+function lerr(m){const e=document.getElementById('lerr');e.textContent=m;e.style.display='block';setTimeout(()=>e.style.display='none',4000)}
+function doLogout(){
+  if(window._unsub)window._unsub();
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('lu').value='';
+  document.getElementById('lp').value='';
+  entries=[];
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════════════
+document.querySelectorAll('.nb').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.t)));
+function showTab(t){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('act'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('act'));
+  document.getElementById('tab-'+t).classList.add('act');
+  document.querySelector('[data-t="'+t+'"]').classList.add('act');
+  if(t==='dashboard')renderDash();
+  if(t==='ledger')renderLedger();
+  if(t==='reports')renderReports();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function renderDash(){
+  const act=entries.filter(e=>e.status!=='closed');
+  const cl=entries.filter(e=>e.status==='closed');
+  const od=entries.filter(e=>isOD(e));
+  const tp=act.reduce((s,e)=>s+e.amount,0);
+  let ti=0;act.forEach(e=>{const{interest}=calcInt(e.amount,e.interestRate,daysB(e.entryDate,today()),e.minDays,e.slab);ti+=interest});
+  const tw=act.reduce((s,e)=>s+(e.grossWeight||0),0);
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="sc gld"><div class="sc-lbl">Active mortgages</div><div class="sc-val">${act.length}</div><div class="sc-sub">open accounts</div></div>
+    <div class="sc"><div class="sc-lbl">Principal deployed</div><div class="sc-val" style="font-size:18px">${fINR(tp)}</div><div class="sc-sub">outstanding</div></div>
+    <div class="sc gld"><div class="sc-lbl">Interest accrued</div><div class="sc-val" style="font-size:18px">${fINR(ti)}</div><div class="sc-sub">as of today</div></div>
+    <div class="sc"><div class="sc-lbl">Total book value</div><div class="sc-val" style="font-size:18px">${fINR(tp+ti)}</div></div>
+    <div class="sc"><div class="sc-lbl">Overdue</div><div class="sc-val" style="color:${od.length?'var(--red)':'var(--tx)'}">${od.length}</div></div>
+    <div class="sc"><div class="sc-lbl">Gold held</div><div class="sc-val">${tw.toFixed(2)}g</div></div>
+    <div class="sc"><div class="sc-lbl">Closed / Redeemed</div><div class="sc-val">${cl.length}</div></div>
+    <div class="sc"><div class="sc-lbl">Total entries</div><div class="sc-val">${entries.length}</div></div>`;
+  document.getElementById('od-alert').innerHTML=od.length?`<div class="alrt alrt-d" style="margin-bottom:1rem">⚠️ <strong>${od.length} account(s) overdue</strong> — return date passed. Ledger → Overdue.</div>`:'';
+  const recent=[...entries].sort((a,b)=>b.createdAt>a.createdAt?1:-1).slice(0,7);
+  document.getElementById('dash-recent').innerHTML=!recent.length?'<div class="es"><div class="ei">📭</div><p>No entries yet</p></div>':recent.map(e=>`<div class="hi-it" onclick="openMo('${e.id}')" style="cursor:pointer"><div><span class="chip">${e.id}</span> <strong style="font-size:13px;margin-left:5px">${e.name}</strong><br><span style="font-size:11px;color:var(--mu)">${e.article} · ${fDate(e.entryDate)}</span></div><div style="text-align:right"><span class="bdg bdg-${gSt(e)}">${gSt(e)}</span><br><strong>${fINR(e.amount)}</strong></div></div>`).join('');
+  const wk=new Date();wk.setDate(wk.getDate()+7);const ws=wk.toISOString().split('T')[0];
+  const due=entries.filter(e=>e.status!=='closed'&&e.returnDate&&e.returnDate<=ws&&e.returnDate>=today());
+  document.getElementById('dash-due').innerHTML=!due.length?'<div class="es"><div class="ei">✅</div><p>No entries due this week</p></div>':due.map(e=>`<div class="hi-it" onclick="openMo('${e.id}')" style="cursor:pointer"><div><span class="chip">${e.id}</span> <strong style="font-size:13px;margin-left:5px">${e.name}</strong><br><span style="font-size:11px;color:var(--mu)">Due: ${fDate(e.returnDate)}</span></div><div><strong>${fINR(e.amount)}</strong></div></div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// LEDGER
+// ═══════════════════════════════════════════════════════════
+function setFilt(f,btn){curFilt=f;document.querySelectorAll('.fcp').forEach(b=>b.classList.remove('act'));btn.classList.add('act');renderLedger()}
+function renderLedger(){
+  const q=(document.getElementById('srch')?.value||'').toLowerCase();
+  let list=entries.filter(e=>{
+    if(curFilt!=='all'&&gSt(e)!==curFilt)return false;
+    if(q)return[e.name,e.id,e.mobile,e.article,e.aadhaar].some(v=>(v||'').toLowerCase().includes(q));
+    return true;
+  }).sort((a,b)=>b.createdAt>a.createdAt?1:-1);
+  if(!list.length){document.getElementById('ledger-tbl').innerHTML='<div class="es"><div class="ei">🔍</div><p>No entries found</p></div>';return}
+  document.getElementById('ledger-tbl').innerHTML=`<table><thead><tr><th>ID</th><th>Customer</th><th>Article</th><th>Weight</th><th>Loan</th><th>Entry</th><th>Return</th><th>Status</th><th>Actions</th></tr></thead><tbody>${list.map(e=>`<tr onclick="openMo('${e.id}')"><td><span class="chip">${e.id}</span></td><td><strong>${e.name}</strong><br><span style="font-size:11px;color:var(--mu)">${e.mobile||''}</span></td><td>${e.article}<br><span style="font-size:11px;color:var(--mu)">${e.qty} pc · ${e.purity||''}</span></td><td style="white-space:nowrap">${e.grossWeight}g</td><td style="font-weight:700;white-space:nowrap">${fINR(e.amount)}</td><td style="font-size:12px;white-space:nowrap">${fDate(e.entryDate)}</td><td style="font-size:12px;white-space:nowrap">${fDate(e.returnDate)}</td><td><span class="bdg bdg-${gSt(e)}">${gSt(e)}</span></td><td style="white-space:nowrap"><button class="btn bg sm" onclick="event.stopPropagation();openMo('${e.id}')">View</button> <button class="btn bpu sm" onclick="event.stopPropagation();genPDF('${e.id}')">📄</button></td></tr>`).join('')}</tbody></table>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// NEW ENTRY
+// ═══════════════════════════════════════════════════════════
+function autoCalc(){
+  const w=parseFloat(document.getElementById('fgw').value)||0;
+  const r=parseFloat(document.getElementById('fgr').value)||0;
+  const p=parseFloat(document.getElementById('fpu').value)||0;
+  if(w&&r&&p)document.getElementById('fjv').value=Math.round(w*r*p);
+  previewInt();
+}
+function previewInt(){
+  const amt=parseFloat(document.getElementById('fam').value)||0;
+  const rate=parseFloat(document.getElementById('fir').value)||3;
+  const min=parseInt(document.getElementById('fmd').value)||15;
+  const slab=document.getElementById('fsl2').value;
+  const box=document.getElementById('int-prev');
+  if(!amt){box.style.display='none';return}
+  const{interest,bd}=calcInt(amt,rate,0,min,slab);
+  box.style.display='block';
+  box.innerHTML=`<div class="ibox"><div class="ibox-t">Minimum Interest Preview</div>
+    <div class="ir"><span>Principal</span><span>${fINR(amt)}</span></div>
+    <div class="ir"><span>Rate</span><span>${rate}% per month</span></div>
+    <div class="ir"><span>Min. billing period</span><span>${bd} days</span></div>
+    <div class="ir"><span>Min. interest</span><span>${fINR(interest)}</span></div>
+    <div class="ir"><span>Min. total payback</span><span>${fINR(amt+interest)}</span></div>
+  </div>`;
+}
+function handlePhotos(e){
+  Array.from(e.target.files).forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        const max=700;let w=img.width,h=img.height;
+        if(w>h){if(w>max){h=h*max/w;w=max}}else{if(h>max){w=w*max/h;h=max}}
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        const comp=canvas.toDataURL('image/jpeg',0.72);
+        photoData.push(comp);
+        const el=document.createElement('img');el.src=comp;el.className='pt';
+        document.getElementById('pprev').appendChild(el);
+      };
+      img.src=ev.target.result;
+    };reader.readAsDataURL(file);
+  });
+}
+async function submitEntry(){
+  const name=document.getElementById('fn').value.trim();
+  const mobile=document.getElementById('fm').value.trim();
+  const article=document.getElementById('fart').value.trim();
+  const amount=parseFloat(document.getElementById('fam').value);
+  const edate=document.getElementById('fed').value;
+  const gw=parseFloat(document.getElementById('fgw').value);
+  if(!name||!article||!amount||!edate||!gw){alert('Please fill all required fields marked with *');return}
+  const purEl=document.getElementById('fpu');
+  const entry={
+    id:genId(),name,mobile,
+    aadhaar:document.getElementById('fa').value,
+    guardian:document.getElementById('fg').value,
+    address:document.getElementById('fad').value,
+    article,qty:parseInt(document.getElementById('fq').value)||1,
+    purity:purEl.options[purEl.selectedIndex].text,
+    grossWeight:gw,
+    netWeight:parseFloat(document.getElementById('fnw').value)||gw,
+    stoneWt:parseFloat(document.getElementById('fsw').value)||0,
+    goldRate:parseFloat(document.getElementById('fgr').value)||0,
+    jewelleryValue:parseFloat(document.getElementById('fjv').value)||0,
+    remarks:document.getElementById('frm').value,
+    entryDate:edate,
+    returnDate:document.getElementById('frd').value,
+    amount,
+    interestRate:parseFloat(document.getElementById('fir').value)||3,
+    minDays:parseInt(document.getElementById('fmd').value)||15,
+    slab:document.getElementById('fsl2').value,
+    status:'active',
+    photos:[...photoData],
+    payments:[],
+    createdAt:new Date().toISOString()
+  };
+  document.getElementById('submit-btn').disabled=true;
+  showLoad('Saving to cloud...');
+  try{
+    await dbSaveEntry(entry);
+    hideLoad();
+    document.getElementById('submit-btn').disabled=false;
+    clearForm();
+    if(confirm(`✅ Saved!\nID: ${entry.id}  |  ${entry.name}  |  ${fINR(entry.amount)}\n\nGenerate PDF bill now?`))genPDF(entry.id);
+    else showTab('ledger');
+  }catch(err){hideLoad();document.getElementById('submit-btn').disabled=false;alert('Error: '+err.message)}
+}
+function clearForm(){
+  ['fn','fm','fa','fg','fad','fart','fgw','fnw','fsw','fgr','fjv','frm','frd','fam'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  document.getElementById('fq').value='1';
+  document.getElementById('fed').value=today();
+  document.getElementById('fir').value=settings.defRate||3;
+  document.getElementById('fmd').value=settings.defMin||15;
+  document.getElementById('fsl2').value=settings.defSlab||'15';
+  document.getElementById('int-prev').style.display='none';
+  photoData=[];document.getElementById('pprev').innerHTML='';
+  document.getElementById('pi').value='';
+}
+
+// ═══════════════════════════════════════════════════════════
+// DETAIL MODAL
+// ═══════════════════════════════════════════════════════════
+function openMo(id){
+  const e=entries.find(x=>x.id===id);if(!e)return;
+  const days=daysB(e.entryDate,today());
+  const{interest,bd}=calcInt(e.amount,e.interestRate,days,e.minDays,e.slab);
+  const paid=(e.payments||[]).reduce((s,p)=>s+p.amount,0);
+  const st=gSt(e);
+  document.getElementById('mdl-id').innerHTML=`<span class="chip" style="font-size:13px">${e.id}</span>&nbsp;<span class="bdg bdg-${st}">${st}</span>`;
+  document.getElementById('mdl-body').innerHTML=`
+    <div class="fsl" style="margin-top:0">👤 Customer</div>
+    <div class="igrid"><div class="ip"><div class="lb">Name</div><div class="vl">${e.name}</div></div>
+    <div class="ip"><div class="lb">Mobile</div><div class="vl">${e.mobile||'—'}</div></div>
+    <div class="ip"><div class="lb">Aadhaar</div><div class="vl">${e.aadhaar||'—'}</div></div>
+    <div class="ip"><div class="lb">Guardian</div><div class="vl">${e.guardian||'—'}</div></div>
+    <div class="ip" style="grid-column:1/-1"><div class="lb">Address</div><div class="vl">${e.address||'—'}</div></div></div>
+    <div class="fsl">💎 Jewellery</div>
+    <div class="igrid"><div class="ip"><div class="lb">Article</div><div class="vl">${e.article}</div></div>
+    <div class="ip"><div class="lb">Qty / Purity</div><div class="vl">${e.qty} pcs · ${e.purity||'—'}</div></div>
+    <div class="ip"><div class="lb">Gross weight</div><div class="vl">${e.grossWeight}g</div></div>
+    <div class="ip"><div class="lb">Net weight</div><div class="vl">${e.netWeight}g</div></div>
+    ${e.jewelleryValue?`<div class="ip"><div class="lb">Est. value</div><div class="vl">${fINR(e.jewelleryValue)}</div></div>`:''}
+    ${e.goldRate?`<div class="ip"><div class="lb">Gold rate</div><div class="vl">₹${e.goldRate}/g</div></div>`:''}
+    ${e.remarks?`<div class="ip" style="grid-column:1/-1"><div class="lb">Identification marks</div><div class="vl" style="font-size:13px">${e.remarks}</div></div>`:''}</div>
+    <div class="fsl">💰 Loan & Interest (Today)</div>
+    <div class="igrid" style="margin-bottom:1rem">
+    <div class="ip"><div class="lb">Entry date</div><div class="vl">${fDate(e.entryDate)}</div></div>
+    <div class="ip"><div class="lb">Return date</div><div class="vl">${fDate(e.returnDate)}</div></div>
+    <div class="ip"><div class="lb">Days elapsed</div><div class="vl">${days} days</div></div>
+    <div class="ip"><div class="lb">Billed days</div><div class="vl">${bd} days</div></div></div>
+    <div class="ibox" style="margin-bottom:1rem">
+      <div class="ibox-t">Interest Calculation</div>
+      <div class="ir"><span>Principal</span><span>${fINR(e.amount)}</span></div>
+      <div class="ir"><span>Rate · ${bd} days</span><span>${fINR(interest)}</span></div>
+      <div class="ir"><span>Payments received</span><span style="color:var(--grn)">${fINR(paid)}</span></div>
+      <div class="ir"><span>Total payable</span><span>${fINR(e.amount+interest)}</span></div>
+      <div class="ir"><span>Balance due</span><span>${fINR(e.amount+interest-paid)}</span></div>
+    </div>
+    ${e.photos&&e.photos.length?`<div class="fsl">📷 Photos</div><div class="pg" style="margin-bottom:1rem">${e.photos.map(p=>`<img src="${p}" class="pt">`).join('')}</div>`:''}
+    ${(e.payments||[]).length?`<div class="fsl">💸 Payment History</div><div style="margin-bottom:1rem">${e.payments.map(p=>`<div class="hi-it"><span style="color:var(--mu)">${fDate(p.date)}</span><span>${p.note||'Payment'}</span><span style="color:var(--grn);font-weight:700">${fINR(p.amount)}</span></div>`).join('')}</div>`:''}
+    <div class="dvd"></div>
+    <div class="br" style="margin-top:0;margin-bottom:1rem">
+      <button class="btn bpu" onclick="genPDF('${e.id}')">📄 PDF Bill</button>
+      <button class="btn bg" onclick="printReport('${e.id}')">🖨 Print Report</button>
+      ${st!=='closed'?`<button class="btn bs" onclick="showPayF('${e.id}')">✅ Record Payment</button>
+      <button class="btn bp" onclick="closeE('${e.id}')">🔓 Redeem</button>
+      <button class="btn bd" onclick="delE('${e.id}')">🗑 Delete</button>`
+      :`<button class="btn bd" onclick="delE('${e.id}')">🗑 Delete</button>`}
+    </div>
+    ${st!=='closed'?'<div id="pf-area"></div>':`<div class="alrt alrt-s">✅ Jewellery redeemed on ${fDate(e.closedAt)}</div>`}`;
+  document.getElementById('dmo').classList.add('open');
+}
+function showPayF(id){
+  document.getElementById('pf-area').innerHTML=`
+    <div style="background:var(--sur2);border-radius:var(--radl);padding:14px">
+      <div style="font-size:12px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Record Payment</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <input id="pa" type="number" placeholder="Amount (₹)" style="flex:1;min-width:130px;padding:9px 12px;border:1.5px solid var(--bdr);border-radius:var(--rad);font-family:var(--fn);font-size:14px;background:var(--bg);color:var(--tx);outline:none"/>
+        <input id="pd" type="date" value="${today()}" style="width:155px;padding:9px 12px;border:1.5px solid var(--bdr);border-radius:var(--rad);font-family:var(--fn);font-size:14px;background:var(--bg);color:var(--tx);outline:none"/>
+      </div>
+      <input id="pn" type="text" placeholder="Note (optional, e.g. partial payment, interest only...)" style="width:100%;padding:9px 12px;border:1.5px solid var(--bdr);border-radius:var(--rad);font-family:var(--fn);font-size:14px;background:var(--bg);color:var(--tx);outline:none;margin-bottom:10px"/>
+      <button class="btn bs" onclick="recPay('${id}')">✅ Save Payment to Cloud</button>
+    </div>`;
+}
+async function recPay(id){
+  const e=entries.find(x=>x.id===id);
+  const amt=parseFloat(document.getElementById('pa').value);
+  const dt=document.getElementById('pd').value;
+  const note=document.getElementById('pn').value;
+  if(!amt){alert('Enter payment amount');return}
+  if(!e.payments)e.payments=[];
+  e.payments.push({amount:amt,date:dt,note});
+  showLoad('Saving payment...');
+  try{await dbSaveEntry(e);hideLoad();closeMo();}
+  catch(err){hideLoad();alert('Error: '+err.message)}
+}
+async function closeE(id){
+  if(!confirm('Mark jewellery as redeemed and close this account?'))return;
+  const e=entries.find(x=>x.id===id);
+  e.status='closed';e.closedAt=today();
+  showLoad('Updating...');
+  try{await dbSaveEntry(e);hideLoad();closeMo();}
+  catch(err){hideLoad();alert('Error: '+err.message)}
+}
+async function delE(id){
+  if(!confirm('Delete this entry permanently?'))return;
+  showLoad('Deleting...');
+  try{await dbDelEntry(id);hideLoad();closeMo();}
+  catch(err){hideLoad();alert('Error: '+err.message)}
+}
+function closeMo(){document.getElementById('dmo').classList.remove('open')}
+
+// ═══════════════════════════════════════════════════════════
+// PROFESSIONAL PDF BILL
+// ═══════════════════════════════════════════════════════════
+function genPDF(id){
+  const e=entries.find(x=>x.id===id);if(!e)return;
+  const days=daysB(e.entryDate,today());
+  const{interest,bd}=calcInt(e.amount,e.interestRate,days,e.minDays,e.slab);
+  const paid=(e.payments||[]).reduce((s,p)=>s+p.amount,0);
+  const balance=e.amount+interest-paid;
+
+  try{
+    const{jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const W=210,M=14;
+    const GD=[92,48,6],GL=[254,243,220],GM=[239,159,39],GR=[184,134,11];
+    const BK=[24,24,15],MU=[100,99,90],LG=[242,240,235],WH=[255,255,255];
+
+    // ── HEADER BAND
+    doc.setFillColor(...GD);doc.rect(0,0,W,46,'F');
+    // Gold border line
+    doc.setFillColor(...GM);doc.rect(0,44,W,2,'F');
+
+    // Shop name
+    doc.setTextColor(...GL);
+    doc.setFontSize(22);doc.setFont('helvetica','bold');
+    doc.text(settings.shop||'Sunar Ghar',W/2,16,{align:'center'});
+
+    // Tagline / address
+    doc.setFontSize(9);doc.setFont('helvetica','normal');
+    if(settings.addr){
+      doc.text(settings.addr,W/2,23,{align:'center'});
+    }
+    const si=[settings.phone,settings.gst].filter(Boolean).join('   |   ');
+    if(si)doc.text(si,W/2,28,{align:'center'});
+
+    // Receipt title
+    doc.setFontSize(11.5);doc.setFont('helvetica','bold');
+    doc.setTextColor(...GM);
+    doc.text('GOLD MORTGAGE RECEIPT',W/2,37,{align:'center'});
+    // Decorative dots
+    doc.setFillColor(...GM);
+    [85,88,91,119,122,125].forEach(x=>doc.circle(x,37,0.6,'F'));
+
+    // ── ID STRIP
+    let y=50;
+    doc.setFillColor(...GL);doc.rect(M,y,W-2*M,10,'F');
+    doc.setDrawColor(...GM);doc.setLineWidth(0.4);doc.rect(M,y,W-2*M,10);
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...GD);
+    doc.text('Receipt No: '+e.id,M+4,y+6.5);
+    doc.text('Date: '+fDate(e.entryDate),W-M-4,y+6.5,{align:'right'});
+    y+=16;
+
+    // ── SECTION HELPER
+    const secHead=(title,yy)=>{
+      doc.setFillColor(...GD);doc.rect(M,yy,W-2*M,6.5,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...GL);
+      doc.text(title,M+3,yy+4.5);
+      return yy+10;
+    };
+    const row=(label,val,yy,shade)=>{
+      if(shade){doc.setFillColor(248,245,238);doc.rect(M,yy-3.5,W-2*M,6,'F')}
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...MU);
+      doc.text(label,M+3,yy);
+      doc.setFont('helvetica','normal');doc.setTextColor(...BK);
+      doc.text(String(val||'—'),M+52,yy);
+      return yy+6;
+    };
+    const rowSplit=(l1,v1,l2,v2,yy,shade)=>{
+      if(shade){doc.setFillColor(248,245,238);doc.rect(M,yy-3.5,W-2*M,6,'F')}
+      const mid=M+(W-2*M)/2;
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...MU);
+      doc.text(l1,M+3,yy);
+      doc.setFont('helvetica','normal');doc.setTextColor(...BK);
+      doc.text(String(v1||'—'),M+38,yy);
+      doc.setFont('helvetica','bold');doc.setTextColor(...MU);
+      doc.text(l2,mid+3,yy);
+      doc.setFont('helvetica','normal');doc.setTextColor(...BK);
+      doc.text(String(v2||'—'),mid+34,yy);
+      return yy+6;
+    };
+
+    // ── CUSTOMER SECTION
+    y=secHead('CUSTOMER DETAILS',y);
+    y=rowSplit('Name',e.name,'Mobile',e.mobile||'—',y,false);
+    y=rowSplit('Aadhaar',e.aadhaar||'—','Guardian',e.guardian||'—',y,true);
+    if(e.address){
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...MU);doc.text('Address',M+3,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(...BK);
+      const al=doc.splitTextToSize(e.address,W-M-55);doc.text(al,M+52,y);
+      y+=Math.max(6,al.length*5);
+    }
+    y+=3;
+
+    // ── JEWELLERY SECTION
+    y=secHead('JEWELLERY / ARTICLE DETAILS',y);
+    y=rowSplit('Article',e.article,'Quantity',e.qty+' piece(s)',y,false);
+    y=rowSplit('Purity/Karat',e.purity||'—','Gross Weight',e.grossWeight+'g',y,true);
+    y=rowSplit('Net Weight',e.netWeight+'g','Stone Deduction',(e.stoneWt||0)+'g',y,false);
+    if(e.goldRate||e.jewelleryValue){
+      y=rowSplit('Gold Rate (today)','₹'+(e.goldRate||'—')+'/g','Est. Value',e.jewelleryValue?fINR(e.jewelleryValue):'—',y,true);
+    }
+    if(e.remarks){
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...MU);doc.text('Identification',M+3,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(...BK);
+      const rl=doc.splitTextToSize(e.remarks,W-M-55);doc.text(rl,M+52,y);
+      y+=Math.max(6,rl.length*5);
+    }
+    y+=3;
+
+    // ── LOAN TERMS SECTION
+    y=secHead('LOAN & INTEREST TERMS',y);
+    y=rowSplit('Entry Date',fDate(e.entryDate),'Expected Return',fDate(e.returnDate),y,false);
+    y=rowSplit('Loan Amount',fINR(e.amount),'Interest Rate',e.interestRate+'% per month',y,true);
+    y=rowSplit('Min. Billing Period',e.minDays+' days','Billing Slab',e.slab+'-day slabs',y,false);
+    y=rowSplit('Days Elapsed (today)',days+' days','Billed Days',bd+' days',y,true);
+    y+=3;
+
+    // ── FINANCIAL SUMMARY
+    y=secHead('FINANCIAL SUMMARY',y);
+    // Box background
+    doc.setFillColor(253,248,238);doc.rect(M,y,W-2*M,42,'F');
+    doc.setDrawColor(...GM);doc.setLineWidth(0.5);doc.rect(M,y,W-2*M,42);
+    const sumRow=(label,val,yy,bold)=>{
+      if(bold){doc.setFont('helvetica','bold');doc.setTextColor(...GD)}
+      else{doc.setFont('helvetica','normal');doc.setTextColor(...BK)}
+      doc.setFontSize(9.5);
+      doc.text(label,M+4,yy);
+      doc.setFont('helvetica','bold');
+      doc.text(val,W-M-4,yy,{align:'right'});
+      if(!bold){doc.setDrawColor(230,220,200);doc.setLineWidth(0.2);doc.line(M+4,yy+2,W-M-4,yy+2);}
+      return yy+7.5;
+    };
+    let sy=y+6;
+    sy=sumRow('Principal (Loan Amount)',fINR(e.amount),sy,false);
+    sy=sumRow('Interest ('+bd+' days @ '+e.interestRate+'%/month)',fINR(interest),sy,false);
+    sy=sumRow('Payments Received',paid>0?('-'+fINR(paid)):'₹0',sy,false);
+    // Total line
+    doc.setFillColor(...GM);doc.rect(M,sy-1,W-2*M,0.6,'F');
+    sy+=2;
+    doc.setFillColor(...GD);doc.rect(M,sy,W-2*M,9,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...GL);
+    doc.text('BALANCE DUE',M+4,sy+6.5);
+    doc.text(fINR(balance),W-M-4,sy+6.5,{align:'right'});
+    y=sy+16;
+
+    // ── PAYMENT HISTORY (if any)
+    if((e.payments||[]).length){
+      y+=2;y=secHead('PAYMENT HISTORY',y);
+      e.payments.forEach((p,i)=>{
+        if(i%2===0){doc.setFillColor(248,245,238);doc.rect(M,y-3.5,W-2*M,6,'F')}
+        doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...MU);
+        doc.text(fDate(p.date),M+3,y);
+        if(p.note){doc.text(p.note.substring(0,40),M+30,y)}
+        doc.setTextColor(39,92,6);doc.setFont('helvetica','bold');
+        doc.text(fINR(p.amount),W-M-4,y,{align:'right'});
+        y+=6;
+      });
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(39,92,6);
+      doc.text('Total Paid: '+fINR(paid),W-M-4,y+2,{align:'right'});
+      y+=8;
+    }
+
+    // ── TERMS & CONDITIONS
+    y+=4;
+    doc.setDrawColor(220,215,205);doc.setLineWidth(0.3);doc.line(M,y,W-M,y);y+=5;
+    doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(...MU);
+    doc.text('Terms & Conditions:',M,y);y+=4;
+    doc.setFont('helvetica','normal');
+    const terms=[
+      '1. Minimum interest billed for '+e.minDays+' days even if jewellery is returned before that period.',
+      '2. Interest calculated on '+e.slab+'-day billing slabs at '+e.interestRate+'% per month ('+( e.interestRate/30).toFixed(4)+'% per day).',
+      '3. Pledged jewellery will remain in custody until full payment of principal + interest + any other dues.',
+      '4. '+(settings.shop||'The shop')+' is not liable for loss/damage due to fire, theft, riots, or natural calamities.',
+      '5. Disputes shall be resolved as per applicable local laws. This is a computer-generated receipt.',
+    ];
+    terms.forEach(t=>{doc.text(t,M,y);y+=4.5});
+
+    // ── SIGNATURES
+    y+=8;
+    doc.setFillColor(248,245,238);doc.rect(M,y,W-2*M,20,'F');
+    doc.setDrawColor(220,215,205);doc.rect(M,y,W-2*M,20);
+    const sigL=M+25,sigR=W-M-25;
+    y+=14;
+    doc.setDrawColor(...GR);doc.setLineWidth(0.5);
+    doc.line(M+4,y,sigL+16,y);
+    doc.line(sigR-16,y,W-M-4,y);
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...MU);
+    doc.text("Customer's Signature",M+4,y+4.5);
+    doc.text(settings.owner||'Authorised Signatory',sigR-16,y+4.5);
+    y+=12;
+
+    // ── FOOTER
+    doc.setFillColor(...GD);doc.rect(0,y,W,10,'F');
+    doc.setFillColor(...GM);doc.rect(0,y,W,1.5,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...GL);
+    doc.text('Generated: '+new Date().toLocaleString('en-IN')+'   |   '+( settings.shop||'Sunar Ghar')+(settings.phone?'   |   '+settings.phone:''),W/2,y+6.5,{align:'center'});
+
+    doc.save('Bill_'+e.id+'_'+e.name.replace(/\s+/g,'_')+'.pdf');
+  }catch(err){
+    console.error(err);
+    alert('PDF error: '+err.message+'\nMake sure you are online (jsPDF library needs internet for first load).');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PRINT ARTICLE REPORT
+// ═══════════════════════════════════════════════════════════
+function printReport(id){
+  const e=entries.find(x=>x.id===id);if(!e)return;
+  const days=daysB(e.entryDate,today());
+  const{interest,bd}=calcInt(e.amount,e.interestRate,days,e.minDays,e.slab);
+  const paid=(e.payments||[]).reduce((s,p)=>s+p.amount,0);
+  const w=window.open('','_blank','width=860,height=980');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Report — ${e.id}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;color:#18180F;font-size:13px;background:#fff}
+    .hdr{background:#5C3006;color:#FEF3DC;padding:20px 28px;text-align:center}
+    .hdr h1{font-size:24px;font-weight:800;margin-bottom:5px;letter-spacing:.02em}
+    .hdr .sub{font-size:12px;opacity:.8;margin:2px 0}
+    .hdr .rt{font-size:13px;font-weight:700;margin-top:10px;color:#EF9F27;letter-spacing:.06em}
+    .body{padding:20px 28px 28px}
+    .id-bar{background:#FEF3DC;border:1px solid #EF9F27;border-radius:10px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:8px}
+    .id-bar .iid{font-family:'Courier New',monospace;font-weight:800;color:#5C3006;font-size:15px;background:#fff;border:1px solid #EF9F27;padding:3px 10px;border-radius:5px}
+    .id-bar .meta{font-size:12px;color:#64635A}
+    .sec-t{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#B8860B;border-bottom:2px solid #FEF3DC;padding-bottom:5px;margin:16px 0 10px}
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+    .box{background:#F2F0EB;border-radius:8px;padding:9px 12px}
+    .box .lb{font-size:10px;font-weight:800;color:#64635A;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+    .box .vl{font-size:13px;font-weight:600;color:#18180F}
+    .ibox{background:#FEF3DC;border:1px solid #EF9F27;border-radius:10px;padding:14px 16px;margin-bottom:8px}
+    .ir{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid rgba(184,134,11,.2)}
+    .ir:last-child{border-bottom:none;font-size:15px;font-weight:800;color:#5C3006;margin-top:5px;padding-top:8px}
+    .bal{background:#5C3006;color:#FEF3DC;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+    .bal .bl{font-size:11px;font-weight:700;opacity:.8}
+    .bal .bv{font-size:20px;font-weight:800}
+    table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+    th{background:#F2F0EB;padding:7px 10px;text-align:left;font-size:10px;color:#64635A;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #ddd}
+    td{padding:7px 10px;border-bottom:1px solid #eee}
+    .photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .photos img{width:85px;height:85px;object-fit:cover;border-radius:8px;border:2px solid #EF9F27}
+    .terms{font-size:10px;color:#64635A;margin-top:16px;padding-top:12px;border-top:1px solid #ddd;line-height:1.7}
+    .sig-row{display:flex;justify-content:space-between;margin-top:30px}
+    .sig-box{text-align:center}
+    .sig-line{border-top:1.5px solid #999;margin-top:28px;padding-top:5px;font-size:11px;color:#64635A;width:160px}
+    .ftr{background:#5C3006;color:#FEF3DC;text-align:center;padding:9px;font-size:10px;margin-top:20px}
+    @media print{button,.no-print{display:none!important}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style></head><body>
+  <div class="hdr">
+    <h1>${settings.shop||'Sunar Ghar'}</h1>
+    ${settings.addr?`<div class="sub">${settings.addr}</div>`:''}
+    ${[settings.phone,settings.gst].filter(Boolean).length?`<div class="sub">${[settings.phone,settings.gst].filter(Boolean).join('   |   ')}</div>`:''}
+    <div class="rt">ARTICLE REPORT</div>
+  </div>
+  <div class="body">
+    <div class="id-bar">
+      <div><span class="iid">${e.id}</span></div>
+      <div class="meta">Entry: ${fDate(e.entryDate)}</div>
+      <div class="meta">Return: ${fDate(e.returnDate)}</div>
+      <div><span style="background:${gSt(e)==='active'?'#E8F2FD':gSt(e)==='closed'?'#EDF7E6':'#FDF0F0'};color:${gSt(e)==='active'?'#0A3B7A':gSt(e)==='closed'?'#1E5C06':'#8B1A1A'};border:1px solid ${gSt(e)==='active'?'#2D7DD2':gSt(e)==='closed'?'#4D9A22':'#D94040'};padding:3px 12px;border-radius:20px;font-size:11px;font-weight:800">${gSt(e).toUpperCase()}</span></div>
+    </div>
+    <div class="sec-t">Customer Information</div>
+    <div class="g2">
+      <div class="box"><div class="lb">Name</div><div class="vl">${e.name}</div></div>
+      <div class="box"><div class="lb">Mobile</div><div class="vl">${e.mobile||'—'}</div></div>
+      <div class="box"><div class="lb">Aadhaar No.</div><div class="vl">${e.aadhaar||'—'}</div></div>
+      <div class="box"><div class="lb">Father/Husband</div><div class="vl">${e.guardian||'—'}</div></div>
+      <div class="box" style="grid-column:1/-1"><div class="lb">Address</div><div class="vl">${e.address||'—'}</div></div>
+    </div>
+    <div class="sec-t">Jewellery / Article Details</div>
+    <div class="g2">
+      <div class="box"><div class="lb">Article Name</div><div class="vl">${e.article}</div></div>
+      <div class="box"><div class="lb">Quantity</div><div class="vl">${e.qty} piece(s)</div></div>
+      <div class="box"><div class="lb">Purity / Karat</div><div class="vl">${e.purity||'—'}</div></div>
+      <div class="box"><div class="lb">Gross Weight</div><div class="vl">${e.grossWeight}g</div></div>
+      <div class="box"><div class="lb">Net Weight</div><div class="vl">${e.netWeight}g</div></div>
+      <div class="box"><div class="lb">Stone Deduction</div><div class="vl">${e.stoneWt||0}g</div></div>
+      ${e.goldRate?`<div class="box"><div class="lb">Gold Rate</div><div class="vl">₹${e.goldRate}/g</div></div>`:''}
+      ${e.jewelleryValue?`<div class="box"><div class="lb">Est. Jewellery Value</div><div class="vl">${fINR(e.jewelleryValue)}</div></div>`:''}
+      ${e.remarks?`<div class="box" style="grid-column:1/-1"><div class="lb">Identification Marks</div><div class="vl">${e.remarks}</div></div>`:''}
+    </div>
+    ${e.photos&&e.photos.length?`<div class="sec-t">Jewellery Photos</div><div class="photos">${e.photos.map(p=>`<img src="${p}"/>`).join('')}</div>`:''}
+    <div class="sec-t">Loan & Interest Summary</div>
+    <div class="ibox">
+      <div class="ir"><span>Loan Amount (Principal)</span><span style="font-weight:700">${fINR(e.amount)}</span></div>
+      <div class="ir"><span>Interest Rate</span><span>${e.interestRate}% per month · ${e.slab}-day slab</span></div>
+      <div class="ir"><span>Min. Billing Period</span><span>${e.minDays} days</span></div>
+      <div class="ir"><span>Days Elapsed (today) / Billed</span><span>${days} days / ${bd} days</span></div>
+      <div class="ir"><span>Interest Accrued (today)</span><span style="font-weight:700">${fINR(interest)}</span></div>
+      <div class="ir"><span>Total Payments Received</span><span style="color:#1E5C06;font-weight:700">${fINR(paid)}</span></div>
+      <div class="ir"><span>Balance Due (today)</span><span>${fINR(e.amount+interest-paid)}</span></div>
+    </div>
+    ${(e.payments||[]).length?`<div class="sec-t">Payment History</div><table><thead><tr><th>Date</th><th>Amount</th><th>Note</th></tr></thead><tbody>${e.payments.map(p=>`<tr><td>${fDate(p.date)}</td><td style="color:#1E5C06;font-weight:700">${fINR(p.amount)}</td><td>${p.note||'—'}</td></tr>`).join('')}</tbody></table>`:''}
+    <div class="terms">
+      <strong>Terms & Conditions:</strong><br>
+      1. Minimum interest charged for ${e.minDays} days even on early redemption.<br>
+      2. Interest calculated at ${e.interestRate}%/month on ${e.slab}-day billing slabs.<br>
+      3. Pledged jewellery remains in custody until full payment of principal + interest.<br>
+      4. ${settings.shop||'The shop'} is not liable for loss due to fire, theft, riots, or natural calamities.<br>
+      5. This is a system-generated report.
+    </div>
+    <div class="sig-row">
+      <div class="sig-box"><div class="sig-line">Customer's Signature</div></div>
+      <div class="sig-box"><div class="sig-line">${settings.owner||'Authorised Signatory'}</div></div>
+    </div>
+  </div>
+  <div class="ftr">Generated: ${new Date().toLocaleString('en-IN')} &nbsp;·&nbsp; ${settings.shop||'Sunar Ghar'}${settings.phone?' &nbsp;·&nbsp; '+settings.phone:''}</div>
+  <script>setTimeout(()=>window.print(),500)<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CALCULATOR
+// ═══════════════════════════════════════════════════════════
+function doCalc(){
+  const p=parseFloat(document.getElementById('cp').value)||0;
+  const r=parseFloat(document.getElementById('cr').value)||3;
+  const s=document.getElementById('cs').value,en=document.getElementById('ce').value;
+  const mn=document.getElementById('cm').value||15,sl=document.getElementById('csl').value;
+  const out=document.getElementById('c-out');
+  if(!p||!s||!en){out.innerHTML='';return}
+  const actual=daysB(s,en);const{interest,bd}=calcInt(p,r,actual,mn,sl);
+  out.innerHTML=`<div class="cr"><div class="crw"><span>Actual days</span><span>${actual}</span></div><div class="crw"><span>Billed days</span><span>${bd} (${sl}-day slab)</span></div><div class="crw"><span>Daily rate</span><span>${(r/30).toFixed(4)}%</span></div><div class="crw"><span>Interest amount</span><span>${fINR(interest)}</span></div><div class="crw"><span>Principal + Interest</span><span>${fINR(p+interest)}</span></div></div>`;
+}
+function doGold(){
+  const w=parseFloat(document.getElementById('gw').value)||0;
+  const r=parseFloat(document.getElementById('gr').value)||0;
+  const p=parseFloat(document.getElementById('gp').value)||1;
+  const m=parseFloat(document.getElementById('gmc').value)||0;
+  const ltv=parseFloat(document.getElementById('gltv').value)||70;
+  const out=document.getElementById('g-out');
+  if(!w||!r){out.innerHTML='';return}
+  const pv=w*r*p,mk=pv*m/100,tot=pv+mk;
+  out.innerHTML=`<div class="cr"><div class="crw"><span>Pure gold value</span><span>${fINR(pv)}</span></div><div class="crw"><span>Making charges (${m}%)</span><span>${fINR(mk)}</span></div><div class="crw"><span>Total jewellery value</span><span>${fINR(tot)}</span></div><div class="crw"><span>Suggested loan (${ltv}% LTV)</span><span>${fINR(tot*ltv/100)}</span></div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════════════════════════
+function renderReports(){
+  const act=entries.filter(e=>e.status!=='closed'),cl=entries.filter(e=>e.status==='closed');
+  let ti=0,tp=0;act.forEach(e=>{const{interest}=calcInt(e.amount,e.interestRate,daysB(e.entryDate,today()),e.minDays,e.slab);ti+=interest;tp+=e.amount});
+  const ap=entries.reduce((s,e)=>(e.payments||[]).reduce((ss,p)=>ss+p.amount,s),0);
+  document.getElementById('rpt-stats').innerHTML=`
+    <div class="sc gld"><div class="sc-lbl">Principal out</div><div class="sc-val" style="font-size:18px">${fINR(tp)}</div></div>
+    <div class="sc"><div class="sc-lbl">Interest receivable</div><div class="sc-val" style="font-size:18px">${fINR(ti)}</div></div>
+    <div class="sc gld"><div class="sc-lbl">Total book value</div><div class="sc-val" style="font-size:18px">${fINR(tp+ti)}</div></div>
+    <div class="sc"><div class="sc-lbl">Total collected</div><div class="sc-val" style="font-size:18px">${fINR(ap)}</div></div>
+    <div class="sc"><div class="sc-lbl">Active</div><div class="sc-val">${act.length}</div></div>
+    <div class="sc"><div class="sc-lbl">Closed</div><div class="sc-val">${cl.length}</div></div>`;
+  const sorted=[...entries].sort((a,b)=>b.createdAt>a.createdAt?1:-1);
+  document.getElementById('rpt-tbl').innerHTML=!entries.length?'<div class="es"><div class="ei">📭</div><p>No entries</p></div>':`<table><thead><tr><th>ID</th><th>Customer</th><th>Article</th><th>Loan</th><th>Entry</th><th>Return</th><th>Status</th><th>Bill</th></tr></thead><tbody>${sorted.map(e=>`<tr onclick="openMo('${e.id}')"><td><span class="chip">${e.id}</span></td><td>${e.name}<br><span style="font-size:11px;color:var(--mu)">${e.mobile||''}</span></td><td>${e.article}</td><td style="font-weight:700">${fINR(e.amount)}</td><td style="font-size:12px">${fDate(e.entryDate)}</td><td style="font-size:12px">${fDate(e.returnDate)}</td><td><span class="bdg bdg-${gSt(e)}">${gSt(e)}</span></td><td><button class="btn bpu sm" onclick="event.stopPropagation();genPDF('${e.id}')">📄</button></td></tr>`).join('')}</tbody></table>`;
+  const allp=[];entries.forEach(e=>(e.payments||[]).forEach(p=>allp.push({...p,id:e.id,name:e.name})));
+  allp.sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('pay-log').innerHTML=!allp.length?'<div class="es"><div class="ei">💸</div><p>No payments recorded</p></div>':`<table><thead><tr><th>Date</th><th>ID</th><th>Customer</th><th>Amount</th><th>Note</th></tr></thead><tbody>${allp.map(p=>`<tr><td style="font-size:12px">${fDate(p.date)}</td><td><span class="chip">${p.id}</span></td><td>${p.name}</td><td style="color:var(--grn);font-weight:700">${fINR(p.amount)}</td><td style="font-size:12px;color:var(--mu)">${p.note||'—'}</td></tr>`).join('')}</tbody></table>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════════════
+function exportCSV(){
+  if(!entries.length){alert('No data to export');return}
+  const rows=[['ID','Name','Mobile','Aadhaar','Guardian','Address','Article','Qty','Purity','Gross Wt(g)','Net Wt(g)','Stone(g)','Gold Rate','Est Value','Loan Amount','Interest%','Min Days','Slab','Entry Date','Return Date','Status','Remarks']];
+  entries.forEach(e=>rows.push([e.id,e.name,e.mobile,e.aadhaar,e.guardian,e.address,e.article,e.qty,e.purity,e.grossWeight,e.netWeight,e.stoneWt,e.goldRate,e.jewelleryValue,e.amount,e.interestRate,e.minDays,e.slab,e.entryDate,e.returnDate,e.status,e.remarks]));
+  const csv=rows.map(r=>r.map(c=>'"'+(c||'')+'"').join(',')).join('\n');
+  dl('data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv),'gold_ledger_'+today()+'.csv');
+}
+function exportJSON(){
+  const clean=entries.map(e=>({...e,photos:[]}));
+  dl('data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify({entries:clean,exportDate:new Date().toISOString()},null,2)),'gold_backup_'+today()+'.json');
+}
+function dl(href,name){const a=document.createElement('a');a.href=href;a.download=name;a.click()}
+async function handleImport(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.entries){alert('Invalid backup file');return}
+      if(!confirm(`Import ${data.entries.length} entries? Existing entries will not be overwritten.`))return;
+      showLoad('Importing...');
+      const ex=new Set(entries.map(x=>x.id));let count=0;
+      for(const entry of data.entries){if(!ex.has(entry.id)){await dbSaveEntry(entry);count++}}
+      hideLoad();alert(`✅ Imported ${count} new entries!`);
+    }catch(err){hideLoad();alert('Error: '+err.message)}
+  };reader.readAsText(file);
+}
+async function clearAll(){
+  if(!confirm('Delete ALL data permanently? Cannot be undone!'))return;
+  if(!confirm('FINAL WARNING — delete everything?'))return;
+  showLoad('Deleting all data...');
+  try{for(const e of entries)await dbDelEntry(e.id);hideLoad();alert('All data deleted.');}
+  catch(err){hideLoad();alert('Error: '+err.message)}
+}
+
+// ═══════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════
+function loadSettingsUI(){
+  document.getElementById('su').value=settings.username||'';
+  document.getElementById('scp').value='';
+  document.getElementById('snp').value='';
+  document.getElementById('snp2').value='';
+  document.getElementById('ss').value=settings.shop||'';
+  document.getElementById('so').value=settings.owner||'';
+  document.getElementById('sph').value=settings.phone||'';
+  document.getElementById('sg').value=settings.gst||'';
+  document.getElementById('sa').value=settings.addr||'';
+  document.getElementById('sdr').value=settings.defRate||3;
+  document.getElementById('sdm').value=settings.defMin||15;
+  document.getElementById('sds').value=settings.defSlab||'15';
+}
+async function saveCreds(){
+  const u=document.getElementById('su').value.trim();
+  const cur=document.getElementById('scp').value;
+  const np=document.getElementById('snp').value;
+  const np2=document.getElementById('snp2').value;
+  if(!u||!cur){alert('Enter username and current passcode');return}
+  const ch=await sha256(cur);
+  if(ch!==settings.passcodeHash){alert('❌ Current passcode incorrect');return}
+  if(np&&np!==np2){alert('New passcodes do not match');return}
+  if(np&&np.length<4){alert('Minimum 4 characters');return}
+  settings.username=u;
+  if(np)settings.passcodeHash=await sha256(np);
+  showLoad('Saving credentials...');
+  try{await dbSaveSettings(settings);hideLoad();loadSettingsUI();document.getElementById('tbu').textContent='👤 '+u;alert('✅ Credentials updated securely!');}
+  catch(err){hideLoad();alert('Error: '+err.message)}
+}
+async function saveBiz(){
+  settings.shop=document.getElementById('ss').value;
+  settings.owner=document.getElementById('so').value;
+  settings.phone=document.getElementById('sph').value;
+  settings.gst=document.getElementById('sg').value;
+  settings.addr=document.getElementById('sa').value;
+  showLoad('Saving...');
+  try{await dbSaveSettings(settings);hideLoad();document.getElementById('tb-name').textContent=settings.shop||'Sunar Ghar';alert('✅ Business info saved!');}
+  catch(err){hideLoad();alert('Error: '+err.message)}
+}
+async function saveDefs(){
+  settings.defRate=parseFloat(document.getElementById('sdr').value)||3;
+  settings.defMin=parseInt(document.getElementById('sdm').value)||15;
+  settings.defSlab=document.getElementById('sds').value;
+  showLoad('Saving...');
+  try{await dbSaveSettings(settings);hideLoad();alert('✅ Defaults saved!');}
+  catch(err){hideLoad();alert('Error: '+err.message)}
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+(async()=>{
+  // Check if firebase config is saved
+  const cfg=localStorage.getItem('gm_fb_cfg');
+  const localMode=localStorage.getItem('gm_local_mode');
+  if(localMode){
+    USE_LOCAL=true;
+    document.getElementById('setup-screen').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+    const cb=document.getElementById('login-cloud-badge');
+    cb.innerHTML='💾 Local mode — data on this device only';
+    cb.style.background='var(--gl)';cb.style.color='var(--gd)';cb.style.borderColor='var(--gm)';
+  } else if(cfg){
+    document.getElementById('setup-screen').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+    try{
+      await initFirebase(JSON.parse(cfg));
+    }catch(err){
+      console.error('Firebase init failed:',err);
+      document.getElementById('login-cloud-badge').innerHTML='⚠️ Firebase connection failed — check config';
+      document.getElementById('login-cloud-badge').style.background='var(--red-bg)';
+      document.getElementById('login-cloud-badge').style.color='var(--red)';
+    }
+  } else {
+    document.getElementById('setup-screen').style.display='flex';
+    document.getElementById('login-screen').style.display='none';
+  }
+  document.getElementById('fed').value=today();
+  document.getElementById('cs').value=today();
+  document.getElementById('ce').value=today();
+})();
+
+document.getElementById('dmo').addEventListener('click',function(ev){if(ev.target===this)closeMo()});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape')closeMo()});
+</script>
+</body>
+</html>
